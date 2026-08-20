@@ -1,0 +1,61 @@
+{
+  "language": "Indian Sign Language (ISL)",
+  "standard": "Demo vocabulary structure — replace demoVideo URLs with validated ISL assets before production use",
+  "classes": ["HELLO", "THANK_YOU", "HELP", "WATER", "YES", "NO", "NO_SIGN"],
+  "vocabulary": [
+    {
+      "id": "hello",
+      "gloss": "HELLO",
+      "tokens": ["hello", "hi", "hey", "greetings"],
+      "category": "Greetings",
+      "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      "demoVideo": true,
+      "description": "Demo mapping for HELLO. Replace the video URL with a validated ISL clip before production use."
+    },
+    {
+      "id": "thank_you",
+      "gloss": "THANK_YOU",
+      "tokens": ["thank you", "thanks", "thank"],
+      "category": "Greetings",
+      "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      "demoVideo": true,
+      "description": "Demo mapping for THANK YOU. Replace the video URL with a validated ISL clip before production use."
+    },
+    {
+      "id": "help",
+      "gloss": "HELP",
+      "tokens": ["help", "need help", "assist", "assistance", "emergency"],
+      "category": "Emergency",
+      "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+      "demoVideo": true,
+      "description": "Demo mapping for HELP. Replace the video URL with a validated ISL clip before production use."
+    },
+    {
+      "id": "water",
+      "gloss": "WATER",
+      "tokens": ["water", "drink", "thirsty"],
+      "category": "Daily Needs",
+      "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4",
+      "demoVideo": true,
+      "description": "Demo mapping for WATER. Replace the video URL with a validated ISL clip before production use."
+    },
+    {
+      "id": "yes",
+      "gloss": "YES",
+      "tokens": ["yes", "yeah", "yep", "correct"],
+      "category": "Responses",
+      "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+      "demoVideo": true,
+      "description": "Demo mapping for YES. Replace the video URL with a validated ISL clip before production use."
+    },
+    {
+      "id": "no",
+      "gloss": "NO",
+      "tokens": ["no", "nope", "not", "wrong"],
+      "category": "Responses",
+      "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMobster.mp4",
+      "demoVideo": true,
+      "description": "Demo mapping for NO. Replace the video URL with a validated ISL clip before production use."
+    }
+  ]
+}

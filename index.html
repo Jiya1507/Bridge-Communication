@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#020617">
+  <title>Bridge | Accessibility-First Communication Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <style>
+    body.high-contrast { background: #000 !important; color: #fff !important; }
+    body.high-contrast button, body.high-contrast input, body.high-contrast textarea, body.high-contrast select, body.high-contrast article { border-color: #fff !important; }
+    html.larger-text { font-size: 118%; }
+    .video-mirror { transform: scaleX(-1); }
+    .safe-scrollbar { scrollbar-width: thin; scrollbar-color: #334155 #0f172a; }
+    .focusable:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
+    .panel-flex:not(.hidden) { display: flex; }
+    #a11yModal:not(.hidden) { display: flex; }
+  </style>
+  <script>
+    if (location.protocol === 'file:') {
+      window.addEventListener('DOMContentLoaded', function () {
+        var banner = document.getElementById('serverWarning');
+        if (banner) banner.classList.remove('hidden');
+      });
+    }
+  </script>
+</head>
+<body class="min-h-full select-none bg-slate-950 font-sans text-slate-100 antialiased">
+  <div id="serverWarning" class="hidden border-b border-amber-700 bg-amber-950 px-4 py-3 text-center text-xs text-amber-200">
+    Bridge cannot run correctly from file://. Start a local server (for example: <code class="font-mono">python -m http.server 8000</code>) and open <code class="font-mono">http://localhost:8000</code>.
+  </div>
+
+  <div id="toastContainer" aria-live="polite" class="pointer-events-none fixed bottom-5 right-5 z-[70] flex w-[min(92vw,24rem)] flex-col gap-2"></div>
+
+  <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+      <button data-nav="landing" class="flex items-center gap-3 rounded-lg text-left" aria-label="Go to Bridge home">
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 font-black text-white">B</span>
+        <span>
+          <span class="block text-base font-bold leading-none text-white">Bridge</span>
+          <span class="mt-1 block text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400">Accessible communication demo</span>
+        </span>
+      </button>
+
+      <nav class="hidden items-center gap-6 text-sm text-slate-300 md:flex" aria-label="Primary navigation">
+        <button data-nav="landing" class="hover:text-white">Home</button>
+        <button data-nav="learn" class="hover:text-white">Text → Sign Demo</button>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <button id="navA11yBtn" type="button" class="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-300 hover:text-white" aria-label="Accessibility settings">A11y</button>
+        <button data-nav="precall" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Start Call</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-landing" class="view mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col items-center justify-center px-4 py-16 text-center">
+      <div class="mb-5 rounded-full border border-indigo-800 bg-indigo-950/50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-300">WebRTC · MediaPipe · Captions · Text-to-sign queue</div>
+      <h1 class="max-w-4xl text-4xl font-black tracking-tight text-white sm:text-6xl">Communication<br><span class="text-indigo-400">without barriers.</span></h1>
+      <p class="mt-6 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">A working browser prototype for one-to-one video calling, live hand landmark tracking, a demo gesture-to-text pipeline, browser speech captions, connected peer chat, and a text-to-sign video queue.</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <button data-nav="precall" class="rounded-xl bg-indigo-600 px-6 py-3 font-bold text-white hover:bg-indigo-500">Start Accessible Call</button>
+        <button data-nav="learn" class="rounded-xl border border-slate-700 bg-slate-800 px-6 py-3 font-bold text-slate-200 hover:bg-slate-700">Text → Sign Demo</button>
+      </div>
+      <p id="browserSupport" class="mt-6 text-[11px] text-slate-500"></p>
+      <div class="mt-10 max-w-3xl rounded-2xl border border-amber-900/70 bg-amber-950/25 p-4 text-left text-xs leading-5 text-amber-200/90">
+        <strong>Prototype note:</strong> MediaPipe performs real hand landmark tracking, but the gesture classifier in this demo is rule-based rather than a trained ISL model. The bundled sign video URLs are demo placeholders. Replace them with validated ISL media and a trained model before claiming sign-language accuracy.
+      </div>
+    </section>
+
+    <section id="view-precall" class="view mx-auto hidden min-h-[calc(100vh-4rem)] w-full max-w-4xl px-4 py-10">
+      <div class="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-2xl sm:p-7">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-white">Pre-call device check</h2>
+            <p class="mt-1 text-xs text-slate-400">Allow camera/microphone permission. Leave Meeting ID empty to host a new call.</p>
+          </div>
+          <button data-nav="landing" class="rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700">Back</button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-center">
+          <div>
+            <div class="relative aspect-video overflow-hidden rounded-2xl border border-slate-800 bg-black">
+              <video id="lobbyPreviewVideo" autoplay playsinline muted class="video-mirror h-full w-full object-cover"></video>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button id="lobbyToggleVideoBtn" type="button" class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700">Turn Camera Off</button>
+              <button id="lobbyToggleAudioBtn" type="button" class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700">Mute Mic</button>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label for="userNameInput" class="mb-1 block text-xs text-slate-400">Your name</label>
+              <input id="userNameInput" type="text" value="Guest Participant" autocomplete="name" class="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-sm text-white">
+            </div>
+            <div>
+              <label for="targetMeetingIdInput" class="mb-1 block text-xs text-slate-400">Target Meeting ID</label>
+              <input id="targetMeetingIdInput" type="text" placeholder="Leave empty to host" class="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 font-mono text-sm text-white">
+            </div>
+            <div class="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-xs text-slate-400">
+              <div class="flex justify-between gap-3"><span>Camera</span><span id="diagCamera" class="font-bold text-emerald-400">Checking…</span></div>
+              <div class="mt-2 flex justify-between gap-3"><span>Microphone</span><span id="diagMic" class="font-bold text-emerald-400">Checking…</span></div>
+            </div>
+            <button id="lobbyJoinBtn" type="button" class="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-500">Join Meeting</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-meeting" class="view hidden h-[calc(100vh-4rem)] flex-col overflow-hidden">
+      <div class="flex h-11 items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 text-xs">
+        <div class="min-w-0 truncate">Room: <span id="callRoomId" class="font-mono text-indigo-400">…</span></div>
+        <div id="engineStatusBadge" class="hidden truncate text-center text-slate-400 sm:block">Initializing hand engine…</div>
+        <button id="shareLinkBtn" type="button" class="shrink-0 rounded bg-slate-800 px-3 py-1.5 text-slate-300 hover:text-white">Copy Link</button>
+      </div>
+
+      <div class="relative flex min-h-0 flex-1 overflow-hidden">
+        <div class="relative grid min-w-0 flex-1 grid-cols-1 gap-3 p-3 md:grid-cols-2">
+          <div class="relative flex min-h-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-800 bg-black">
+            <video id="remoteVideo" autoplay playsinline class="h-full w-full object-cover"></video>
+            <div id="remotePlaceholder" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900 text-center text-sm text-slate-500">
+              <span class="text-3xl">◌</span>
+              <span>Waiting for participant to join…</span>
+            </div>
+            <span id="remoteUserName" class="absolute bottom-2 left-2 rounded bg-slate-950/80 px-2 py-1 text-[10px] text-slate-200">Remote participant</span>
+          </div>
+
+          <div class="relative flex min-h-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-800 bg-black">
+            <video id="localVideo" autoplay playsinline muted class="video-mirror h-full w-full object-cover"></video>
+            <canvas id="landmarkOverlayCanvas" class="pointer-events-none absolute inset-0 h-full w-full"></canvas>
+            <span id="localUserName" class="absolute bottom-2 left-2 rounded bg-slate-950/80 px-2 py-1 text-[10px] text-slate-200">You</span>
+          </div>
+
+          <div id="liveCaptionsOverlay" class="absolute bottom-5 left-1/2 w-[min(92%,38rem)] -translate-x-1/2 rounded-xl border border-slate-700 bg-slate-950/90 p-3 text-center text-sm shadow-2xl">
+            <span class="mb-1 block text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400">Local microphone captions</span>
+            <p id="captionStreamText" class="text-slate-200">Listening for spoken audio…</p>
+          </div>
+        </div>
+
+        <aside id="signLanguagePanel" class="panel-flex hidden w-[21rem] shrink-0 flex-col gap-4 overflow-y-auto border-l border-slate-800 bg-slate-900 p-4 lg:flex">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-bold text-white">Gesture → Text Demo</h2>
+              <p class="mt-0.5 text-[10px] text-amber-300">Rule-based prototype, not validated ISL recognition</p>
+            </div>
+            <span id="signConfidenceScore" class="shrink-0 font-mono text-[10px] text-emerald-400">Confidence: 0%</span>
+          </div>
+
+          <div>
+            <span class="mb-1 block text-xs text-slate-400">Detected sequence</span>
+            <div id="detectedSignSequence" class="flex min-h-[42px] flex-wrap gap-1 rounded-lg border border-slate-800 bg-slate-950 p-2 text-xs"><span class="italic text-slate-500">No gestures registered</span></div>
+          </div>
+
+          <div class="flex min-h-40 flex-1 flex-col">
+            <label for="sentenceOutputArea" class="mb-1 block text-xs text-slate-400">Constructed sentence</label>
+            <textarea id="sentenceOutputArea" class="min-h-36 flex-1 resize-none rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs leading-5 text-slate-100" placeholder="Detected signs will be formatted here…"></textarea>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button id="speakSentenceBtn" type="button" class="rounded bg-indigo-600 py-2 text-xs font-bold text-white hover:bg-indigo-500">Speak</button>
+            <button id="undoSignBtn" type="button" class="rounded bg-slate-800 py-2 text-xs text-slate-200 hover:bg-slate-700">Undo</button>
+            <button id="clearSentenceBtn" type="button" class="rounded bg-slate-800 py-2 text-xs text-slate-200 hover:bg-slate-700">Clear</button>
+          </div>
+        </aside>
+
+        <aside id="chatPanel" class="panel-flex hidden w-[19rem] shrink-0 flex-col border-l border-slate-800 bg-slate-900 p-3 md:flex">
+          <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-xs font-bold text-white">Peer Chat</h2>
+            <button id="chatPanelCloseBtn" type="button" onclick="document.getElementById('chatPanel').classList.add('hidden')" class="rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">×</button>
+          </div>
+          <div id="chatMessages" class="safe-scrollbar flex-1 space-y-2 overflow-y-auto"></div>
+          <div class="mt-2 flex gap-1 border-t border-slate-800 pt-2">
+            <input id="chatInput" type="text" autocomplete="off" placeholder="Message…" class="min-w-0 flex-1 rounded border border-slate-800 bg-slate-950 p-2 text-xs text-white">
+            <button id="sendChatBtn" type="button" class="rounded bg-indigo-600 px-3 text-xs font-bold text-white">Send</button>
+          </div>
+        </aside>
+      </div>
+
+      <nav class="flex h-17 items-center justify-center gap-2 border-t border-slate-800 bg-slate-900 px-3 py-3" aria-label="Meeting controls">
+        <button id="dockMicBtn" type="button" title="Toggle microphone (M)" class="rounded-full bg-slate-800 px-4 py-3 text-sm hover:bg-slate-700">🎤</button>
+        <button id="dockCameraBtn" type="button" title="Toggle camera (V)" class="rounded-full bg-slate-800 px-4 py-3 text-sm hover:bg-slate-700">📷</button>
+        <button id="dockCaptionsBtn" type="button" title="Toggle captions (C)" class="rounded-full bg-indigo-600 px-4 py-3 text-sm hover:bg-indigo-500">CC</button>
+        <button id="dockSignPanelBtn" type="button" title="Toggle gesture panel" class="rounded-full bg-slate-800 px-4 py-3 text-sm hover:bg-slate-700">🤟</button>
+        <button id="dockChatBtn" type="button" title="Toggle chat (H)" class="rounded-full bg-slate-800 px-4 py-3 text-sm hover:bg-slate-700">✉</button>
+        <button id="dockEndCallBtn" type="button" title="End call" class="ml-2 rounded-full bg-red-600 px-4 py-3 text-sm hover:bg-red-500">■</button>
+      </nav>
+    </section>
+
+    <section id="view-learn" class="view mx-auto hidden min-h-[calc(100vh-4rem)] w-full max-w-6xl space-y-8 px-4 py-10">
+      <div class="flex flex-wrap items-end justify-between gap-3 border-b border-slate-800 pb-5">
+        <div>
+          <h2 class="text-2xl font-bold text-white">Text → Sign Video Queue</h2>
+          <p class="mt-1 max-w-3xl text-xs leading-5 text-slate-400">Tokenizes English text and queues mapped sign clips. The bundled media is intentionally marked as demo footage; replace each URL in <code class="text-indigo-300">data/signs.json</code> with validated ISL videos for your real project.</p>
+        </div>
+        <button data-nav="landing" class="rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700">Back Home</button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 rounded-3xl border border-slate-800 bg-slate-900 p-5 md:grid-cols-2 md:p-6">
+        <div class="space-y-4">
+          <div>
+            <label for="textToSignInput" class="mb-1 block text-xs text-slate-400">Type an English message</label>
+            <input id="textToSignInput" type="text" value="help water thank you" class="w-full rounded-lg border border-slate-800 bg-slate-950 p-3 text-sm text-white">
+          </div>
+          <div class="flex gap-2">
+            <button id="translateTextBtn" type="button" class="flex-1 rounded-lg bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-500">Translate & Play Queue</button>
+            <select id="signSpeedSelect" aria-label="Playback speed" class="rounded-lg border border-slate-800 bg-slate-950 px-3 text-xs text-white">
+              <option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+            </select>
+          </div>
+          <div>
+            <span class="mb-2 block text-xs text-slate-400">Mapped sequence</span>
+            <div id="translatedSignSequence" class="flex min-h-12 flex-wrap gap-2 text-xs"></div>
+          </div>
+          <div class="rounded-xl border border-amber-900/70 bg-amber-950/20 p-3 text-[11px] leading-5 text-amber-200/90">Words without a dictionary entry are marked “unmapped” instead of pretending to provide a correct sign. Add validated vocabulary entries to expand coverage.</div>
+        </div>
+
+        <div class="relative aspect-video overflow-hidden rounded-2xl border border-slate-800 bg-black">
+          <video id="signVideoPlayer" controls playsinline class="h-full w-full object-cover"></video>
+          <span id="signPlaybackStatus" class="absolute left-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-[10px] text-indigo-300">Ready</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <h3 class="text-lg font-bold text-white">Dictionary mappings</h3>
+          <span class="text-[10px] uppercase tracking-[0.16em] text-slate-500">Edit data/signs.json to expand</span>
+        </div>
+        <div id="signsDictionaryGrid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="a11yModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/80 p-4">
+    <div class="w-full max-w-sm space-y-4 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="a11yTitle">
+      <h3 id="a11yTitle" class="font-bold text-white">Accessibility options</h3>
+      <label class="flex items-center justify-between gap-4 text-sm"><span>High contrast mode</span><input id="highContrastToggle" type="checkbox" class="h-4 w-4"></label>
+      <label class="flex items-center justify-between gap-4 text-sm"><span>Larger interface text</span><input id="largerTextToggle" type="checkbox" class="h-4 w-4"></label>
+      <div class="rounded-lg border border-slate-800 bg-slate-950 p-3 text-[11px] leading-5 text-slate-400">Keyboard: <strong class="text-slate-200">M</strong> mic, <strong class="text-slate-200">V</strong> camera, <strong class="text-slate-200">C</strong> captions, <strong class="text-slate-200">H</strong> chat.</div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="closeA11yBtn" type="button" class="rounded bg-slate-800 px-3 py-2 text-xs text-slate-200">Close</button>
+        <button id="saveA11yBtn" type="button" class="rounded bg-indigo-600 px-3 py-2 text-xs font-bold text-white">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
